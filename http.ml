@@ -35,11 +35,11 @@ module Epoll : sig
   type t
 
   val create : unit -> t
-  val ctl : t -> Core.Unix.File_descr.t -> ctl_action -> unit
-  val epoll_fd : t -> Core.Unix.File_descr.t
+  val ctl : t -> Core_unix.File_descr.t -> ctl_action -> unit
+  val epoll_fd : t -> Core_unix.File_descr.t
 
   type epoll_wait_result =
-    { fd : Core.Unix.File_descr.t
+    { fd : Core_unix.File_descr.t
     ; in_ : bool
     ; out : bool
     ; hup : bool
@@ -119,7 +119,7 @@ end = struct
   type t = int
 
   let create () = Raw.epoll_create1 Raw.epoll_cloexec
-  let epoll_fd t = Core.Unix.File_descr.of_int t
+  let epoll_fd t = Core_unix.File_descr.of_int t
 
   let ctl t fd change =
     let op =
@@ -139,12 +139,12 @@ end = struct
       Raw.epoll_ctl
         t
         ~op
-        ~fd:(Core.Unix.File_descr.to_int fd)
+        ~fd:(Core_unix.File_descr.to_int fd)
         ~events
-        ~data:(Core.Unix.File_descr.to_int fd)
+        ~data:(Core_unix.File_descr.to_int fd)
     with
     | exception Unix.Unix_error (code, fn_name, str) ->
-      let extra_info = sprintf !"%{sexp:ctl_action} %{Core.Unix.File_descr}" change fd in
+      let extra_info = sprintf !"%{sexp:ctl_action} %{Core_unix.File_descr}" change fd in
       let str = 
         match str with
         | "" -> extra_info
@@ -156,7 +156,7 @@ end = struct
   ;;
 
   type epoll_wait_result =
-    { fd : Core.Unix.File_descr.t
+    { fd : Core_unix.File_descr.t
     ; in_ : bool
     ; out : bool
     ; hup : bool
@@ -166,7 +166,7 @@ end = struct
     match Raw.epoll_wait t ~timeout with
     | None -> None
     | Some (events, data) ->
-      let fd = Core.Unix.File_descr.of_int data in
+      let fd = Core_unix.File_descr.of_int data in
       Some
         { fd
         ; in_ = events land Raw.epollin <> 0
@@ -230,7 +230,7 @@ module Async_multi_integration = struct
     in
     let on_epoll_ready () =
       match Epoll.epoll_wait epoll ~timeout:0 with
-      | None -> failwith "epoll is ready, but epoll_wait yielded nothing?"
+      | None -> after_curl_actions ()
       | Some { fd; in_; out; hup } ->
         let fd_status : Curl.Multi.fd_status =
           match in_ || hup, out with

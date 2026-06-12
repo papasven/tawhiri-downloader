@@ -74,7 +74,7 @@ type mode =
 
 let create ~filename mode =
   let module BA = Bigarray in
-  let module Unix = Core.Unix in
+  let module Unix = Core_unix in
   let unix_mode, shared =
     match mode with
     | RW -> [ Unix.O_RDWR; Unix.O_CREAT ], true
@@ -83,7 +83,7 @@ let create ~filename mode =
   Monitor.try_with_or_error (fun () ->
       In_thread.run (fun () ->
           Unix.with_file filename ~mode:unix_mode ~f:(fun fd ->
-              Caml.Unix.map_file fd BA.float32 BA.c_layout shared shape_arr)))
+              Unix.map_file fd BA.float32 BA.c_layout ~shared shape_arr)))
 ;;
 
 let slice t hour level variable =

@@ -43,7 +43,7 @@ let clean_directory ?directory ~keep () =
   | Error _ as error -> return error
   | Ok to_remove ->
     let%bind results =
-      Deferred.List.map to_remove ~f:(fun { path; _ } ->
+      Deferred.List.map to_remove ~how:`Sequential ~f:(fun { path; _ } ->
           Monitor.try_with_or_error (fun () -> Sys.remove path))
     in
     return (Or_error.combine_errors_unit results)
@@ -191,7 +191,7 @@ let shared_args =
     let directory =
       flag
         "directory"
-        (optional Filename.arg_type)
+        (optional Filename_unix.arg_type)
         ~doc:"DIR (optional) directory in which to place the dataset"
     and log_level =
       flag
@@ -253,4 +253,4 @@ let cmd =
     [ "one", one_cmd; "daemon", daemon_cmd ]
 ;;
 
-let () = Command.run cmd
+let () = Command_unix.run cmd
